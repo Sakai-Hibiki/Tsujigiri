@@ -12,6 +12,8 @@ TOKEN = 'NjY1NTA3ODc2NjIxNTE2ODAw.XhnFhA.Nvbh4jFERg-f1CqD0WGUaNb3BxY'
 client = discord.Client()
 GUILD_ID = 665506952591179781
 dsn = os.environ.get('DATABASE_URL')
+PRUNE_DAYS = 1
+SLEEP_SECS = 21600
 
 
 # message イベント
@@ -26,16 +28,16 @@ async def on_message(message):
         user_id = message.author.id
         time = utc_to_jst(message.created_at)
         msg_log = (user_id, time)
-        write(msg_log)
+        write_log(msg_log)
 
 # ---commands---
     # activelog を表示する
     if message.content.startswith('.activelog'):
-        await message.channel.send(read_all())
+        await message.channel.send(read_log())
     # 本人の前回ログからの経過秒数を表示する
     if message.content.startswith('.term'):
         now = datetime.utcnow() + DELTA_JST
-        for row in read_all():
+        for row in read_log():
             term = now - str_to_datetime(row[1])
             await message.channel.send(term.total_seconds())
 # --------------
@@ -53,7 +55,22 @@ async def on_member_join(member):
         user_id = member.id
         time = member.joined_at
         msg_log = (user_id, time)
-        write(msg_log)
+        write_log(msg_log)
+
+
+@client.event
+async def on_member_remove(member):
+    # Bot は無視する
+    if member.bot:
+        pass
+
+    # ログを削除する
+    else:
+        try:
+            delete_log(member.id)
+            print('Deleted the record of ' + member.display_name)
+        except AttributeError:
+            print('Cannot delete the record of ' + member.display_name)
 
 
 # ready イベント
@@ -68,23 +85,23 @@ async def kicker():
         # 現在時刻を取得する
         now = datetime.utcnow() + DELTA_JST
         # データベースを参照する
-        for row in read_all():
+        for row in read_log():
             # 非アクティブ期間を求める
             term = now - str_to_datetime(row[1])
-            if term.days > 5:
+            if term.days > PRUNE_DAYS:
                 target = get_member_profile(row[0])
-                # ターゲットをキックし、データベースから消去する
+                # ターゲットをキックし、ログを削除する
                 try:
                     await target.kick()
                     print('Kicked ' + target.name)
-                    delete(row[0])
+                    """delete_log(row[0])"""
                 # ターゲットをキックできなかったとき、エラーメッセージを出力する
                 except (discord.errors.Forbidden, AttributeError) as error_content:
                     try:
                         print('Failed to kick ' + target.name + ': ' + str(error_content))
                     except AttributeError as error_content:
                         print('Cannot get Username: ' + str(error_content))
-        await asyncio.sleep(43200)
+        await asyncio.sleep(SLEEP_SECS)
 
 
 # ID から discord.Member 型のプロフィールを生成する
@@ -105,8 +122,8 @@ def str_to_datetime(str_time):
     return datetime_time
 
 
-# レコードを書き込む
-def write(msg_log):
+# ログを書き込む
+def write_log(msg_log):
     with closing(psycopg2.connect(dsn)) as conn:
         c = conn.cursor()
         c.execute('CREATE TABLE IF NOT EXISTS log (id TEXT, time TEXT, CONSTRAINT log_key PRIMARY KEY(id))')
@@ -118,16 +135,16 @@ def write(msg_log):
         conn.commit()
 
 
-# レコードを読み込む
-def read_all():
+# ログを読み込む
+def read_log():
     with closing(psycopg2.connect(dsn)) as conn:
         c = conn.cursor()
         c.execute('SELECT * FROM log')
         return c.fetchall()
 
 
-# レコードを削除する
-def delete(user_id):
+# ログを削除する
+def delete_log(user_id):
     with closing(psycopg2.connect(dsn)) as conn:
         c = conn.cursor()
         c.execute('DELETE FROM log WHERE id=?', (user_id, ))
