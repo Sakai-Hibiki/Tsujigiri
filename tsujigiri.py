@@ -111,8 +111,8 @@ def write(msg_log):
         c = conn.cursor()
         c.execute('CREATE TABLE IF NOT EXISTS log (id INTEGER, time TEXT, CONSTRAINT log_key PRIMARY KEY(id))')
         c.execute('INSERT INTO log VALUES (?, ?)'
-                  'ON CONFLICT ON CONSTRAINT log_key'
-                  'DO UPDATE SET time=?',
+                  ' ON CONFLICT ON CONSTRAINT log_key'
+                  ' DO UPDATE SET time=?',
                   (msg_log[0], msg_log[1], msg_log[1])
                   )
         conn.commit()
