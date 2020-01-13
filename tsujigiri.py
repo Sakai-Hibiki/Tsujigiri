@@ -110,9 +110,9 @@ def write(msg_log):
     with closing(psycopg2.connect(dsn)) as conn:
         c = conn.cursor()
         c.execute('CREATE TABLE IF NOT EXISTS log (id INTEGER, time TEXT, CONSTRAINT log_key PRIMARY KEY(id))')
-        c.execute('INSERT INTO log VALUES (?, ?)'
+        c.execute('INSERT INTO log VALUES (%s, %s)'
                   ' ON CONFLICT ON CONSTRAINT log_key'
-                  ' DO UPDATE SET time=?',
+                  ' DO UPDATE SET time=%s',
                   (msg_log[0], msg_log[1], msg_log[1])
                   )
         conn.commit()
