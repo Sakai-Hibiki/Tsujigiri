@@ -11,7 +11,7 @@ DELTA_JST = timedelta(hours=9)
 TOKEN = 'NjY1NTA3ODc2NjIxNTE2ODAw.XhnFhA.Nvbh4jFERg-f1CqD0WGUaNb3BxY'
 client = discord.Client()
 GUILD_ID = 665506952591179781
-dsn = os.environ('DATABASE_URL')
+dsn = os.environ.get('DATABASE_URL')
 
 
 # message イベント
