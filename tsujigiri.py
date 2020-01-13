@@ -109,7 +109,7 @@ def str_to_datetime(str_time):
 def write(msg_log):
     with closing(psycopg2.connect(dsn)) as conn:
         c = conn.cursor()
-        c.execute('CREATE TABLE IF NOT EXISTS log (CONSTRAINT log_key PRIMARY KEY(id), time TEXT)')
+        c.execute('CREATE TABLE IF NOT EXISTS log (id INTEGER, time TEXT, CONSTRAINT log_key PRIMARY KEY(id))')
         c.execute('INSERT INTO log VALUES (?, ?)'
                   'ON CONFLICT ON CONSTRAINT log_key'
                   'DO UPDATE SET time=?',
