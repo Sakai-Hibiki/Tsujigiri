@@ -12,8 +12,8 @@ TOKEN = 'NjY1NTA3ODc2NjIxNTE2ODAw.XhnFhA.Nvbh4jFERg-f1CqD0WGUaNb3BxY'
 client = discord.Client()
 GUILD_ID = 665506952591179781
 dsn = os.environ.get('DATABASE_URL')
-PRUNE_DAYS = 1
-SLEEP_SECS = 21600
+PRUNE_DAYS = 2
+SLEEP_SECS = 7200
 
 
 # message イベント
@@ -76,6 +76,7 @@ async def on_member_remove(member):
 # ready イベント
 @client.event
 async def on_ready():
+    print('Ready')
     await kicker()
 
 
@@ -88,13 +89,12 @@ async def kicker():
         for row in read_log():
             # 非アクティブ期間を求める
             term = now - str_to_datetime(row[1])
-            if term.days > PRUNE_DAYS:
-                target = get_member_profile(row[0])
+            if term.days >= PRUNE_DAYS:
+                target = get_member_profile(int(row[0]))
                 # ターゲットをキックし、ログを削除する
                 try:
                     await target.kick()
                     print('Kicked ' + target.name)
-                    """delete_log(row[0])"""
                 # ターゲットをキックできなかったとき、エラーメッセージを出力する
                 except (discord.errors.Forbidden, AttributeError) as error_content:
                     try:
@@ -147,7 +147,7 @@ def read_log():
 def delete_log(user_id):
     with closing(psycopg2.connect(dsn)) as conn:
         c = conn.cursor()
-        c.execute('DELETE FROM log WHERE id=?', (user_id, ))
+        c.execute('DELETE FROM log WHERE id=%s', (str(user_id), ))
         conn.commit()
 
 
