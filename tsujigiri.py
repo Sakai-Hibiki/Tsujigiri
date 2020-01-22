@@ -12,8 +12,8 @@ TOKEN = 'NjY1NTA3ODc2NjIxNTE2ODAw.XhnFhA.Nvbh4jFERg-f1CqD0WGUaNb3BxY'
 client = discord.Client()
 GUILD_ID = 665506952591179781
 dsn = os.environ.get('DATABASE_URL')
-PRUNE_DAYS = 2
-SLEEP_SECS = 7200
+PRUNE_DAYS = 180
+SLEEP_SECS = 10800
 
 
 # message イベント
